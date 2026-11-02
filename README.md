@@ -1,117 +1,210 @@
-# Resume Matching Agent with MCP + LangGraph
+# Resume Matching Agent using MCP and LangGraph
 
-A beginner-friendly reference implementation for the MCP assignment. It includes:
-- A Python MCP filesystem server using the official `mcp` Python SDK and stdio transport.
-- MCP resources for listing resumes and reading an individual resume.
-- MCP tools: `list_files`, `read_file`, `batch_process`, `watch_directory`, and `get_server_config`.
-- A LangGraph workflow that discovers MCP tools, retrieves resumes through MCP, then scores and ranks candidates.
-- PDF, DOCX, and TXT text extraction.
+A Python-based Resume Matching Agent that uses the **Model Context Protocol (MCP)** and **LangGraph** to discover, process, and rank resumes against a given job description.
 
-> This is an educational baseline. The keyword-overlap score is not a validated hiring assessment. Do not use it as the sole basis for employment decisions. Add human review, privacy controls, access control, audit logging, retention policies, and bias testing before production use.
+This project demonstrates how an MCP filesystem server can expose tools and resources to an AI agent through the MCP client-server architecture.
 
-## 1. Requirements
+## 1. Project Features
 
-- Python 3.10+
-- Install dependencies:
+- Python MCP filesystem server using the official MCP SDK.
+- MCP communication using JSON-RPC 2.0 over stdio.
+- MCP resource discovery and reading.
+- Resume file discovery and extraction.
+- Batch processing of multiple resumes.
+- Directory watching for newly added resumes.
+- LangGraph workflow for resume matching and ranking.
+- Supports PDF, DOCX, and TXT resume formats.
+- Basic keyword-based candidate scoring.
 
-```bash
-python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# macOS/Linux:
-source .venv/bin/activate
+## 2. Project Structure
 
-pip install -r requirements.txt
+```text
+resume-matching-mcp/
+│
+├── filesystem_mcp_server.py
+├── matching_agent.py
+├── job_description.txt
+├── requirements.txt
+├── README.md
+├── test_mcp_resources.py
+├── test_watch.py
+│
+├── resumes/
+│   ├── sample_python_candidate.txt
+│   ├── sample_java_candidate.txt
+│   └── new_candidate.txt
+│
+├── utils/
+│   ├── resume_parser.py
+│   └── matching.py
+│
+├── tests/
+│   ├── test_matching.py
+│   └── test_parser.py
+│
+└── diagrams/
+    └── mcp_workflow.mmd
 ```
 
-## 2. Add resumes
+## 3. Technologies Used
 
-Put `.pdf`, `.docx`, or `.txt` files in `resumes/`. Two sample TXT files are included.
+- Python
+- Model Context Protocol (MCP)
+- FastMCP
+- LangGraph
+- JSON-RPC 2.0
+- PyPDF
+- Python-docx
 
-## 3. Run the MCP server
+## 4. Installation and Setup
+
+### Prerequisites
+
+- Python 3.10 or later
+- Git
+- VS Code or another Python IDE
+
+### Step 1: Clone the repository
+
+```bash
+git clone https://github.com/srinija169/resume-matching-mcp.git
+cd resume-matching-mcp
+```
+
+### Step 2: Create a virtual environment
+
+Windows PowerShell:
+
+```powershell
+python -m venv venv
+venv\Scripts\Activate.ps1
+```
+
+macOS/Linux:
+
+```bash
+python -m venv venv
+source venv/bin/activate
+```
+
+### Step 3: Install dependencies
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+## 5. Running the MCP Server
+
+Run the following command:
 
 ```bash
 python filesystem_mcp_server.py
 ```
 
-The server uses stdio, so it may appear to wait silently. That is expected: it communicates using MCP JSON-RPC messages over stdin/stdout. Stop it with Ctrl+C. The LangGraph agent can also launch the server automatically.
+The server uses stdio transport. It may appear to wait silently because it communicates through standard input and output.
 
-## 4. Run the matching agent
+The matching agent can also start the MCP server automatically as a subprocess.
 
-In another terminal:
+**Note:** When running the matching agent, you do not need to manually start another server instance.
+
+## 6. MCP Resources
+
+The MCP server exposes the following resources:
+
+| Resource URI | Description |
+|---|---|
+| `resumes://list` | Lists available resume files |
+| `resume://{filename}` | Reads and extracts an individual resume |
+
+## 7. MCP Tools
+
+The server exposes these tools:
+
+| Tool | Description |
+|---|---|
+| `list_files` | Lists supported resume files |
+| `read_file` | Reads and extracts an individual resume |
+| `batch_process` | Processes multiple resumes |
+| `watch_directory` | Detects newly added files during a bounded watch period |
+| `get_server_config` | Returns server configuration information |
+
+The directory watcher uses polling and a configurable time window. It detects newly added files; it is not a continuous file-content modification monitor.
+
+The official MCP SDK handles protocol initialization, JSON-RPC communication, tool discovery, resource discovery, and stdio transport.
+
+## 8. Running the Resume Matching Agent
+
+Run the agent using the provided job description:
 
 ```bash
 python matching_agent.py --job-file job_description.txt
 ```
 
-Or pass a job description directly:
+Alternatively, provide a job description directly:
 
 ```bash
 python matching_agent.py --job "Python developer with SQL, APIs, Git and Docker experience"
 ```
 
-The agent starts the MCP server as a subprocess, initializes an MCP client session, discovers tools, calls `list_files` and `batch_process`, then ranks candidates.
+### Agent Workflow
 
-## 5. MCP capabilities
+1. Connects to the MCP filesystem server.
+2. Initializes the MCP client session.
+3. Discovers available MCP tools.
+4. Retrieves resumes using MCP tools.
+5. Extracts resume text.
+6. Processes resumes through the LangGraph workflow.
+7. Calculates keyword matching scores.
+8. Ranks candidates based on their matching scores.
 
-### Resources
-- `resumes://list` — JSON list of supported resume filenames.
-- `resume://{filename}` — extracted text for one resume.
+## 9. Testing
 
-### Tools
-- `list_files()` — discover resume files.
-- `read_file(filename)` — extract one resume.
-- `batch_process(filenames=None)` — process many resumes independently.
-- `watch_directory(wait_seconds=30, poll_interval=2.0)` — detect newly added files during a bounded watch window.
-- `get_server_config()` — report non-secret server configuration.
-
-The server is implemented with FastMCP, which handles MCP's JSON-RPC protocol, initialization, discovery, and stdio framing. It is not a hand-written imitation of MCP.
-
-## 6. Tests
+Run the unit tests:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-## 7. Configuration
+The project includes tests for:
 
-By default, resumes are read from the local `resumes/` folder. Override it with:
+- Keyword matching score calculation.
+- Candidate ranking order.
+- TXT resume extraction.
 
-```bash
-# macOS/Linux
-export RESUME_DIR="/absolute/path/to/resumes"
-python matching_agent.py --job-file job_description.txt
-
-# Windows PowerShell
-$env:RESUME_DIR="C:\path\to\resumes"
-python matching_agent.py --job-file job_description.txt
-```
-
-## 8. Workflow diagram
-
-See `diagrams/mcp_workflow.mmd`. You can preview the Mermaid diagram in GitHub or a Mermaid editor.
-
-## 9. Demo video plan (5–6 minutes)
-
-1. Introduce the problem and architecture (0:00–0:40).
-2. Show `filesystem_mcp_server.py`, its resources and tools (0:40–1:40).
-3. Explain MCP initialization and discovery; run the server (1:40–2:30).
-4. Show `matching_agent.py` and its LangGraph nodes (2:30–3:30).
-5. Run the agent and explain batch processing and ranking (3:30–4:40).
-6. Demonstrate directory watching in a second terminal or small Python MCP client (4:40–5:20).
-7. Run tests and show the GitHub repository (5:20–6:00).
-
-## 10. GitHub submission
-
-Create a repository named `resume-matching-mcp`, then:
+Additional MCP functionality can be tested using:
 
 ```bash
-git init
-git add .
-git commit -m "Build MCP resume matching agent"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/resume-matching-mcp.git
-git push -u origin main
+python test_mcp_resources.py
 ```
 
-Replace `YOUR_USERNAME` with your GitHub username. Record the demo and add its link to this README before submitting.
+```bash
+python test_watch.py
+```
+
+## 10. Workflow Diagram
+
+The project workflow is available in:
+
+`diagrams/mcp_workflow.mmd`
+
+The diagram illustrates communication between the LangGraph agent, MCP client, MCP server, and filesystem.
+
+GitHub can preview the Mermaid diagram.
+
+## 11. GitHub Repository
+
+**Repository:** https://github.com/srinija169/resume-matching-mcp
+
+## 12. Limitations and Future Improvements
+
+- The current matching algorithm uses basic keyword overlap.
+- The scoring mechanism is an educational baseline, not a validated hiring assessment.
+- The directory watcher detects new files, not edits to existing files.
+- Production deployment would require stronger security, access control, privacy protections, audit logging, and bias testing.
+- Future improvements could include semantic matching using embeddings and more advanced resume analysis.
+
+## 13. Conclusion
+
+This project demonstrates how the Model Context Protocol can connect filesystem capabilities to a LangGraph-based agent.
+
+It provides a practical example of MCP server development, tool discovery, resource discovery, batch processing, directory watching, and automated resume matching.
