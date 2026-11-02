@@ -1,0 +1,4 @@
+Alex Morgan
+Python Developer
+Skills: Python, SQL, REST APIs, Git, data processing, Docker.
+Experience: Built backend services and automated reporting pipelines.

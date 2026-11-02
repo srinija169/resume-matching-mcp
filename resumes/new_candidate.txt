@@ -1,0 +1,4 @@
+Taylor Smith
+Python Developer
+Skills: Python, SQL, FastAPI, Docker, Git.
+Experience: 3 years in backend development.

@@ -1,0 +1,12 @@
+flowchart TD
+    U[User submits job description] --> A[LangGraph Matching Agent]
+    A --> C[MCP Client: initialize and discover tools]
+    C <--> S[Filesystem MCP Server]
+    S --> R[resources/list and resources/read]
+    S --> T[tools/list and tools/call]
+    T --> F[Resume filesystem]
+    F --> B[batch_process resumes]
+    B --> A
+    A --> M[Keyword scoring and ranking]
+    M --> O[Ranked candidate results]
+    W[watch_directory tool] --> S
