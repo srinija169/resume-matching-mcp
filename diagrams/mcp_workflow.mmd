@@ -1,12 +1,43 @@
+
 flowchart TD
-    U[User submits job description] --> A[LangGraph Matching Agent]
-    A --> C[MCP Client: initialize and discover tools]
-    C <--> S[Filesystem MCP Server]
-    S --> R[resources/list and resources/read]
-    S --> T[tools/list and tools/call]
-    T --> F[Resume filesystem]
-    F --> B[batch_process resumes]
-    B --> A
-    A --> M[Keyword scoring and ranking]
-    M --> O[Ranked candidate results]
-    W[watch_directory tool] --> S
+    U[User submits Job Description]
+    A[LangGraph Matching Agent]
+    C[MCP Client]
+    S[Filesystem MCP Server]
+    R[MCP Resources]
+    T[MCP Tools]
+    F[Resume Filesystem]
+    P[Resume Parser]
+    B[Batch Processing]
+    G[LangGraph Matching Workflow]
+    M[Keyword Scoring and Ranking]
+    O[Ranked Candidate Results]
+    W[Directory Watcher]
+
+    U --> A
+    A --> C
+    C <-->|JSON-RPC 2.0 over stdio| S
+
+    S --> R
+    S --> T
+
+    R --> R1[resumes://list]
+    R --> R2[resume://filename]
+
+    T --> T1[list_files]
+    T --> T2[read_file]
+    T --> T3[batch_process]
+    T --> T4[watch_directory]
+    T --> T5[get_server_config]
+
+    T1 --> F
+    T2 --> F
+    T3 --> B
+    B --> F
+    F --> P
+    P --> G
+
+    W --> T4
+
+    G --> M
+    M --> O
